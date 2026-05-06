@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <title>漢字よみかたれんしゅう</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Kosugi+Maru&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --green: #1D9E75;
+      --green-light: #EAF3DE;
+      --green-dark: #3B6D11;
+      --red-light: #FCEBEB;
+      --red-dark: #A32D2D;
+      --red: #E24B4A;
+      --bg: #F4F3EE;
+      --card-bg: #FFFFFF;
+      --text: #2C2C2A;
+      --text-muted: #888780;
+      --text-hint: #B4B2A9;
+      --border: rgba(0,0,0,0.12);
+      --radius: 16px;
+      --radius-sm: 10px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    html, body {
+      height: 100%;
+      font-family: 'Noto Sans JP', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      overflow-x: hidden;
+    }
+    body {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      min-height: -webkit-fill-available;
+    }
+
+    /* ── HEADER ── */
+    .app-header {
+      background: var(--card-bg);
+      border-bottom: 0.5px solid var(--border);
+      padding: 16px 20px 12px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .app-icon {
+      width: 44px; height: 44px;
+      background: var(--green);
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 24px;
+      flex-shrink: 0;
+    }
+    .app-title { font-size: 18px; font-weight: 700; line-height: 1.2; }
+    .app-subtitle { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
+
+    /* ── MAIN CONTENT ── */
+    .main { flex: 1; padding: 20px 16px 40px; max-width: 600px; margin: 0 auto; width: 100%; }
+
+    /* ── SCREEN SYSTEM ── */
+    .screen { display: none; }
+    .screen.active { display: block; }
+
+    /* ── SETUP SCREEN ── */
+    .section-label {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-muted);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+      margin-top: 20px;
+    }
+    .section-label:first-child { margin-top: 0; }
+    .pill-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 4px; }
+    .pill {
+      padding: 9px 18px;
+      border: 1.5px solid var(--border);
+      border-radius: 50px;
+      font-size: 15px;
+      font-family: 'Noto Sans JP', sans-serif;
+      background: var(--card-bg);
+      color: var(--text);
+      cursor: pointer;
+      transition: all 0.15s;
+      font-weight: 400;
+    }
+    .pill:active { transform: scale(0.96); }
+    .pill.active {
+      background: var(--green);
+      border-color: var(--green);
+      color: white;
+      font-weight: 500;
+    }
+    .start-btn {
+      display: block;
+      width: 100%;
+      margin-top: 28px;
+      padding: 18px;
+      background: var(--green);
+      color: white;
+      border: none;
+      border-radius: var(--radius);
+      font-size: 18px;
+      font-family: 'Noto Sans JP', sans-serif;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 0.03em;
+      box-shadow: 0 4px 16px rgba(29,158,117,0.3);
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .start-btn:active { transform: scale(0.97); box-shadow: 0 2px 8px rgba(29,158,117,0.2); }
+
+    /* ── GAME SCREEN ── */
+    .progress-wrap {
+      background: #E0DDD6;
+      border-radius: 4px;
+      height: 6px;
+      margin-bottom: 14px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: var(--green);
+      border-radius: 4px;
+      transition: width 0.4s ease;
+    }
+    .game-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+    .score-badge {
+      background: var(--green-light);
+      color: var(--green-dark);
+      padding: 4px 12px;
+      border-radius: 50px;
+      font-size: 13px;
+      font-weight: 500;
+    }
+    .flashcard {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      padding: 28px 20px 24px;
+      text-align: center;
+      margin-bottom: 18px;
+      border: 0.5px solid var(--border);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+    }
+    .card-cat {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 500;
+      padding: 3px 10px;
+      border-radius: 50px;
+      background: #E6F1FB;
+      color: #185FA5;
+      margin-bottom: 14px;
+      letter-spacing: 0.04em;
+    }
+    .card-prompt {
+      font-size: 12px;
+      color: var(--text-hint);
+      margin-bottom: 12px;
+      letter-spacing: 0.04em;
+    }
+    .kanji-display {
+      font-family: 'Kosugi Maru', sans-serif;
+      font-size: 64px;
+      line-height: 1.15;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+    .underline-hint {
+      width: 60px;
+      height: 2px;
+      background: var(--text);
+      margin: 0 auto 14px;
+      border-radius: 2px;
+    }
+    .sentence-ctx {
+      font-size: 14px;
+      color: var(--text-muted);
+      line-height: 1.9;
+    }
+    .choices-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .choice-btn {
+      background: var(--card-bg);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 18px 10px;
+      font-size: 20px;
+      font-family: 'Kosugi Maru', sans-serif;
+      cursor: pointer;
+      color: var(--text);
+      transition: all 0.15s;
+      text-align: center;
+      line-height: 1.3;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .choice-btn:active:not(:disabled) { transform: scale(0.96); }
+    .choice-btn:hover:not(:disabled) { border-color: var(--green); background: #F5FBF8; }
+    .choice-btn.correct {
+      background: var(--green-light);
+      border-color: var(--green);
+      color: var(--green-dark);
+    }
+    .choice-btn.wrong {
+      background: var(--red-light);
+      border-color: var(--red);
+      color: var(--red-dark);
+    }
+    .choice-btn:disabled { cursor: default; }
+    .feedback-row {
+      min-height: 28px;
+      text-align: center;
+      font-size: 15px;
+      margin-bottom: 12px;
+      font-weight: 500;
+    }
+    .feedback-row.correct-msg { color: var(--green-dark); }
+    .feedback-row.wrong-msg { color: var(--red-dark); }
+    .next-btn {
+      display: none;
+      width: 100%;
+      padding: 16px;
+      background: var(--green);
+      color: white;
+      border: none;
+      border-radius: var(--radius);
+      font-size: 17px;
+      font-family: 'Noto Sans JP', sans-serif;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.15s;
+    }
+    .next-btn:active { transform: scale(0.97); }
+
+    /* ── RESULT SCREEN ── */
+    .result-wrap { text-align: center; padding-top: 10px; }
+    .result-emoji { font-size: 64px; margin-bottom: 12px; }
+    .result-fraction { font-size: 56px; font-weight: 700; color: var(--green); line-height: 1; }
+    .result-total { font-size: 16px; color: var(--text-muted); margin-top: 4px; margin-bottom: 6px; }
+    .result-msg { font-size: 20px; font-weight: 500; color: var(--text); margin-bottom: 6px; }
+    .result-pct { font-size: 14px; color: var(--text-muted); margin-bottom: 28px; }
+    .result-actions { display: flex; flex-direction: column; gap: 10px; }
+    .btn-primary {
+      width: 100%;
+      padding: 16px;
+      background: var(--green);
+      color: white;
+      border: none;
+      border-radius: var(--radius);
+      font-size: 17px;
+      font-family: 'Noto Sans JP', sans-serif;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(29,158,117,0.3);
+      transition: transform 0.15s;
+    }
+    .btn-primary:active { transform: scale(0.97); }
+    .btn-secondary {
+      width: 100%;
+      padding: 15px;
+      background: var(--card-bg);
+      color: var(--text);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 16px;
+      font-family: 'Noto Sans JP', sans-serif;
+      font-weight: 500;
+      cursor: pointer;
+      transition: transform 0.15s;
+    }
+    .btn-secondary:active { transform: scale(0.97); }
+
+    /* ── REVIEW SCREEN ── */
+    .review-list { display: flex; flex-direction: column; gap: 10px; padding-bottom: 20px; }
+    .review-item {
+      background: var(--card-bg);
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .review-kanji { font-family: 'Kosugi Maru', sans-serif; font-size: 28px; min-width: 56px; text-align: center; }
+    .review-info { flex: 1; }
+    .review-hira { font-family: 'Kosugi Maru', sans-serif; font-size: 18px; color: var(--text); }
+    .review-sent { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+    .review-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .dot-correct { background: var(--green); }
+    .dot-wrong { background: var(--red); }
+    .back-btn {
+      width: 100%;
+      margin-bottom: 16px;
+      padding: 14px;
+      background: var(--card-bg);
+      color: var(--text);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 16px;
+      font-family: 'Noto Sans JP', sans-serif;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    /* iPad & larger */
+    @media (min-width: 600px) {
+      .main { padding: 28px 24px 48px; }
+      .kanji-display { font-size: 80px; }
+      .choice-btn { font-size: 22px; padding: 22px 12px; }
+      .choices-grid { gap: 14px; }
+      .flashcard { padding: 36px 28px 30px; }
+    }
+  </style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="app-icon">📖</div>
+  <div>
+    <div class="app-title">漢字よみかたれんしゅう</div>
+    <div class="app-subtitle">Kanji Reading Practice</div>
+  </div>
+</header>
+
+<main class="main">
+
+  <!-- ══ SETUP SCREEN ══ -->
+  <div id="screen-setup" class="screen active">
+    <div class="section-label">カテゴリー（Category）</div>
+    <div class="pill-row" id="cat-row">
+      <button class="pill active" onclick="setCat('prefecture', this)">都道府県 Prefectures</button>
+      <button class="pill" onclick="setCat('all', this)">ぜんぶ All Words</button>
+    </div>
+
+    <div class="section-label">もんだいのかず（Number of Questions）</div>
+    <div class="pill-row" id="q-row">
+      <button class="pill active" onclick="setQ(5, this)">5</button>
+      <button class="pill" onclick="setQ(10, this)">10</button>
+      <button class="pill" onclick="setQ(15, this)">15</button>
+      <button class="pill" onclick="setQ(999, this)">ぜんぶ All</button>
+    </div>
+
+    <button class="start-btn" onclick="startGame()">▶ スタート！ Start!</button>
+  </div>
+
+  <!-- ══ GAME SCREEN ══ -->
+  <div id="screen-game" class="screen">
+    <div class="progress-wrap">
+      <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+    </div>
+    <div class="game-meta">
+      <span id="q-counter">もんだい 1 / 5</span>
+      <span class="score-badge" id="score-badge">⭕ 0</span>
+    </div>
+    <div class="flashcard">
+      <div class="card-cat" id="card-cat">都道府県</div>
+      <div class="card-prompt">どうよむ？ How do you read this?</div>
+      <div class="kanji-display" id="kanji-disp"></div>
+      <div class="underline-hint"></div>
+      <div class="sentence-ctx" id="sentence-ctx"></div>
+    </div>
+    <div class="choices-grid" id="choices-grid"></div>
+    <div class="feedback-row" id="feedback"></div>
+    <button class="next-btn" id="next-btn" onclick="nextQuestion()">つぎへ →</button>
+  </div>
+
+  <!-- ══ RESULT SCREEN ══ -->
+  <div id="screen-result" class="screen">
+    <div class="result-wrap">
+      <div class="result-emoji" id="result-emoji">🎉</div>
+      <div class="result-fraction" id="result-fraction">0</div>
+      <div class="result-total" id="result-total">もんだい</div>
+      <div class="result-msg" id="result-msg"></div>
+      <div class="result-pct" id="result-pct"></div>
+      <div class="result-actions">
+        <button class="btn-primary" onclick="startGame()">もういちど！ Play Again</button>
+        <button class="btn-secondary" onclick="showReview()">まちがいをみる Review</button>
+        <button class="btn-secondary" onclick="showScreen('setup')">もんだいをえらぶ Change Settings</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ REVIEW SCREEN ══ -->
+  <div id="screen-review" class="screen">
+    <button class="back-btn" onclick="showScreen('result')">← けっかにもどる Back to Results</button>
+    <div class="review-list" id="review-list"></div>
+  </div>
+
+</main>
+
+<script>
+  const ALL_PAIRS = [
+    { kanji:"宮城県", hira:"みやぎけん",   sentence:"宮城県のお祭り。",        cat:"prefecture" },
+    { kanji:"山形県", hira:"やまがたけん",  sentence:"山形県のサクランボ。",     cat:"prefecture" },
+    { kanji:"茨城県", hira:"いばらきけん",  sentence:"茨城県のメロン。",        cat:"prefecture" },
+    { kanji:"栃木県", hira:"とちぎけん",    sentence:"栃木県のイチゴ。",        cat:"prefecture" },
+    { kanji:"群馬県", hira:"ぐんまけん",    sentence:"群馬県のこんにゃく。",     cat:"prefecture" },
+    { kanji:"埼玉県", hira:"さいたまけん",  sentence:"埼玉県の人口。",          cat:"prefecture" },
+    { kanji:"神奈川県",hira:"かながわけん", sentence:"神奈川県にある港。",       cat:"prefecture" },
+    { kanji:"新潟県", hira:"にいがたけん",  sentence:"新潟県のお米。",          cat:"prefecture" },
+    { kanji:"富山県", hira:"とやまけん",    sentence:"富山県へ行く。",          cat:"prefecture" },
+    { kanji:"福井県", hira:"ふくいけん",    sentence:"福井県のチューリップ。",   cat:"prefecture" },
+    { kanji:"山梨県", hira:"やまなしけん",  sentence:"山梨県のブドウ。",        cat:"prefecture" },
+    { kanji:"岐阜県", hira:"ぎふけん",      sentence:"岐阜県でくらす。",        cat:"prefecture" },
+    { kanji:"静岡県", hira:"しずおかけん",  sentence:"静岡県のお茶。",          cat:"prefecture" },
+    { kanji:"七夕",   hira:"たなばた",      sentence:"七夕の行事。",            cat:"word" },
+    { kanji:"品物",   hira:"しなもの",      sentence:"品物が豊富だ。",          cat:"word" },
+    { kanji:"重さ",   hira:"おもさ",        sentence:"重さを量る。",            cat:"word" },
+    { kanji:"富士",   hira:"ふじ",          sentence:"富士の山。",              cat:"word" },
+    { kanji:"変化",   hira:"へんか",        sentence:"変化に富む。",            cat:"word" },
+    { kanji:"生産量", hira:"せいさんりょう",sentence:"キノコの生産量。",        cat:"word" },
+    { kanji:"面白さ", hira:"おもしろさ",    sentence:"面白さをはかる。",        cat:"word" },
+  ];
+
+  let questionCount = 5;
+  let category = 'prefecture';
+  let questions = [];
+  let current = 0;
+  let score = 0;
+  let answered = false;
+  let results = [];
+
+  function shuffle(arr) {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  function setCat(c, btn) {
+    category = c;
+    document.querySelectorAll('#cat-row .pill').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+
+  function setQ(n, btn) {
+    questionCount = n;
+    document.querySelectorAll('#q-row .pill').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+
+  function getPool() {
+    return category === 'prefecture'
+      ? ALL_PAIRS.filter(p => p.cat === 'prefecture')
+      : ALL_PAIRS;
+  }
+
+  function startGame() {
+    const pool = getPool();
+    const count = Math.min(questionCount, pool.length);
+    questions = shuffle(pool).slice(0, count);
+    current = 0; score = 0; results = [];
+    showScreen('game');
+    renderQuestion();
+  }
+
+  function renderQuestion() {
+    answered = false;
+    const q = questions[current];
+    const total = questions.length;
+
+    document.getElementById('progress-fill').style.width = `${(current / total) * 100}%`;
+    document.getElementById('q-counter').textContent = `もんだい ${current + 1} / ${total}`;
+    document.getElementById('score-badge').textContent = `⭕ ${score}`;
+    document.getElementById('kanji-disp').textContent = q.kanji;
+    document.getElementById('sentence-ctx').textContent = q.sentence;
+    document.getElementById('card-cat').textContent = q.cat === 'prefecture' ? '都道府県' : 'ことば';
+    document.getElementById('feedback').textContent = '';
+    document.getElementById('feedback').className = 'feedback-row';
+    document.getElementById('next-btn').style.display = 'none';
+
+    const pool = ALL_PAIRS;
+    const wrongs = shuffle(pool.filter(p => p.hira !== q.hira)).slice(0, 3);
+    const choices = shuffle([q, ...wrongs]);
+
+    const grid = document.getElementById('choices-grid');
+    grid.innerHTML = '';
+    choices.forEach(c => {
+      const btn = document.createElement('button');
+      btn.className = 'choice-btn';
+      btn.textContent = c.hira;
+      btn.setAttribute('aria-label', c.hira);
+      btn.addEventListener('click', () => checkAnswer(btn, c.hira, q.hira));
+      grid.appendChild(btn);
+    });
+  }
+
+  function checkAnswer(btn, chosen, correct) {
+    if (answered) return;
+    answered = true;
+
+    const allBtns = document.querySelectorAll('.choice-btn');
+    allBtns.forEach(b => {
+      b.disabled = true;
+      if (b.textContent === correct) b.classList.add('correct');
+    });
+
+    const isCorrect = chosen === correct;
+    if (isCorrect) {
+      score++;
+      btn.classList.add('correct');
+      document.getElementById('feedback').textContent = '⭕ せいかい！ Correct!';
+      document.getElementById('feedback').className = 'feedback-row correct-msg';
+    } else {
+      btn.classList.add('wrong');
+      document.getElementById('feedback').innerHTML = `✕ こたえは「<span style="font-family:\'Kosugi Maru\',sans-serif">${correct}</span>」です`;
+      document.getElementById('feedback').className = 'feedback-row wrong-msg';
+    }
+    document.getElementById('score-badge').textContent = `⭕ ${score}`;
+    results.push({ q: questions[current], correct: isCorrect });
+    document.getElementById('next-btn').style.display = 'block';
+  }
+
+  function nextQuestion() {
+    current++;
+    if (current >= questions.length) {
+      showResult();
+    } else {
+      renderQuestion();
+    }
+  }
+
+  function showResult() {
+    const total = questions.length;
+    const pct = Math.round((score / total) * 100);
+    document.getElementById('progress-fill').style.width = '100%';
+
+    let emoji = '😢', msg = 'もっとれんしゅうしよう！';
+    if (pct >= 90) { emoji = '🏆'; msg = 'すごい！かんぺきです！'; }
+    else if (pct >= 70) { emoji = '🎉'; msg = 'よくできました！'; }
+    else if (pct >= 50) { emoji = '😊'; msg = 'いいですよ！もっとがんばろう！'; }
+
+    document.getElementById('result-emoji').textContent = emoji;
+    document.getElementById('result-fraction').textContent = `${score} / ${total}`;
+    document.getElementById('result-total').textContent = `もんだい (${pct}%)`;
+    document.getElementById('result-msg').textContent = msg;
+    showScreen('result');
+  }
+
+  function showReview() {
+    const list = document.getElementById('review-list');
+    list.innerHTML = '';
+    results.forEach(r => {
+      const div = document.createElement('div');
+      div.className = 'review-item';
+      div.innerHTML = `
+        <div class="review-kanji">${r.q.kanji}</div>
+        <div class="review-info">
+          <div class="review-hira">${r.q.hira}</div>
+          <div class="review-sent">${r.q.sentence}</div>
+        </div>
+        <div class="review-dot ${r.correct ? 'dot-correct' : 'dot-wrong'}"></div>
+      `;
+      list.appendChild(div);
+    });
+    showScreen('review');
+  }
+
+  function showScreen(name) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(`screen-${name}`).classList.add('active');
+    window.scrollTo(0, 0);
+  }
+</script>
+
+</body>
+</html>
