@@ -4,588 +4,543 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-  <title>漢字よみかたれんしゅう</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Kosugi+Maru&display=swap" rel="stylesheet" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>漢字キャッチ！</title>
+  <link href="https://fonts.googleapis.com/css2?family=Kaisei+Decol:wght@400;700&family=Noto+Sans+JP:wght@400;700;900&family=DotGothic16&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --green: #1D9E75;
-      --green-light: #EAF3DE;
-      --green-dark: #3B6D11;
-      --red-light: #FCEBEB;
-      --red-dark: #A32D2D;
-      --red: #E24B4A;
-      --bg: #F4F3EE;
-      --card-bg: #FFFFFF;
-      --text: #2C2C2A;
-      --text-muted: #888780;
-      --text-hint: #B4B2A9;
-      --border: rgba(0,0,0,0.12);
-      --radius: 16px;
-      --radius-sm: 10px;
+      --neon-yellow: #FFE600;
+      --neon-pink: #FF2D78;
+      --neon-blue: #00C8FF;
+      --neon-green: #00FF9C;
+      --neon-orange: #FF8C00;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
     html, body {
-      height: 100%;
+      height: 100%; width: 100%;
+      overflow: hidden;
       font-family: 'Noto Sans JP', sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      overflow-x: hidden;
-    }
-    body {
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
-      min-height: -webkit-fill-available;
+      background: #0a0a1a;
+      color: white;
     }
 
-    /* ── HEADER ── */
-    .app-header {
-      background: var(--card-bg);
-      border-bottom: 0.5px solid var(--border);
-      padding: 16px 20px 12px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      position: sticky;
-      top: 0;
-      z-index: 10;
-    }
-    .app-icon {
-      width: 44px; height: 44px;
-      background: var(--green);
-      border-radius: 12px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 24px;
+    /* STARS */
+    #stars { position: fixed; inset: 0; z-index: 0;
+      background: radial-gradient(ellipse at 20% 50%, rgba(0,200,255,0.07) 0%, transparent 60%),
+                  radial-gradient(ellipse at 80% 20%, rgba(255,45,120,0.07) 0%, transparent 50%),
+                  linear-gradient(180deg, #0a0a2e 0%, #0a0a1a 100%); }
+    .star { position: absolute; border-radius: 50%; background: white;
+      animation: twinkle var(--d) ease-in-out infinite alternate; }
+    @keyframes twinkle { from{opacity:0.1;transform:scale(0.8)} to{opacity:0.9;transform:scale(1.2)} }
+
+    /* LAYOUT */
+    #app { position: relative; z-index: 1; width: 100%; height: 100vh; height: 100dvh;
+           display: flex; flex-direction: column; }
+
+    /* HEADER */
+    #header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 16px 10px;
+      background: rgba(0,0,0,0.4); backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(255,255,255,0.1);
       flex-shrink: 0;
     }
-    .app-title { font-size: 18px; font-weight: 700; line-height: 1.2; }
-    .app-subtitle { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
+    .hdr-logo { font-family: 'DotGothic16', monospace; font-size: 22px;
+      color: var(--neon-yellow); letter-spacing: 2px; }
+    .hdr-logo span { color: var(--neon-pink); }
+    .hdr-stats { display: flex; gap: 10px; }
+    .stat-chip {
+      display: flex; align-items: center; gap: 4px;
+      background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.13);
+      border-radius: 20px; padding: 4px 10px; font-size: 14px; font-weight: 700;
+    }
 
-    /* ── MAIN CONTENT ── */
-    .main { flex: 1; padding: 20px 16px 40px; max-width: 600px; margin: 0 auto; width: 100%; }
+    /* ARENA */
+    #arena { flex: 1; position: relative; overflow: hidden; }
 
-    /* ── SCREEN SYSTEM ── */
-    .screen { display: none; }
-    .screen.active { display: block; }
+    /* COMBO BANNER */
+    #combo-banner {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+      font-family: 'DotGothic16', monospace; font-size: 38px;
+      color: var(--neon-yellow); text-shadow: 0 0 20px rgba(255,230,0,0.9);
+      pointer-events: none; opacity: 0; z-index: 30; white-space: nowrap;
+    }
+    @keyframes comboPop {
+      0%{opacity:0;transform:translate(-50%,-50%) scale(0.5)}
+      20%{opacity:1;transform:translate(-50%,-50%) scale(1.3)}
+      60%{opacity:1;transform:translate(-50%,-50%) scale(1)}
+      100%{opacity:0;transform:translate(-50%,-60%) scale(0.9)}
+    }
 
-    /* ── SETUP SCREEN ── */
-    .section-label {
-      font-size: 12px;
-      font-weight: 500;
-      color: var(--text-muted);
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      margin-bottom: 10px;
-      margin-top: 20px;
+    /* FALLING KANJI */
+    .kanji-drop {
+      position: absolute; display: flex; flex-direction: column; align-items: center;
+      z-index: 5; animation: fall linear forwards; will-change: transform;
     }
-    .section-label:first-child { margin-top: 0; }
-    .pill-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 4px; }
-    .pill {
-      padding: 9px 18px;
-      border: 1.5px solid var(--border);
-      border-radius: 50px;
-      font-size: 15px;
-      font-family: 'Noto Sans JP', sans-serif;
-      background: var(--card-bg);
-      color: var(--text);
-      cursor: pointer;
-      transition: all 0.15s;
-      font-weight: 400;
+    .timer-bar-wrap { width: 90px; height: 5px; margin-bottom: 5px;
+      background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden; }
+    .timer-bar-fill {
+      height: 100%; width: 100%; border-radius: 3px;
+      background: linear-gradient(90deg, var(--neon-green), var(--neon-yellow), var(--neon-pink));
+      transform-origin: left; animation: timerShrink 5s linear forwards;
     }
-    .pill:active { transform: scale(0.96); }
-    .pill.active {
-      background: var(--green);
-      border-color: var(--green);
-      color: white;
-      font-weight: 500;
-    }
-    .start-btn {
-      display: block;
-      width: 100%;
-      margin-top: 28px;
-      padding: 18px;
-      background: var(--green);
-      color: white;
-      border: none;
-      border-radius: var(--radius);
-      font-size: 18px;
-      font-family: 'Noto Sans JP', sans-serif;
-      font-weight: 700;
-      cursor: pointer;
-      letter-spacing: 0.03em;
-      box-shadow: 0 4px 16px rgba(29,158,117,0.3);
-      transition: transform 0.15s, box-shadow 0.15s;
-    }
-    .start-btn:active { transform: scale(0.97); box-shadow: 0 2px 8px rgba(29,158,117,0.2); }
+    @keyframes timerShrink { from{transform:scaleX(1)} to{transform:scaleX(0)} }
 
-    /* ── GAME SCREEN ── */
-    .progress-wrap {
-      background: #E0DDD6;
-      border-radius: 4px;
-      height: 6px;
-      margin-bottom: 14px;
-      overflow: hidden;
+    .kanji-bubble {
+      background: linear-gradient(135deg, rgba(255,255,255,0.14), rgba(255,255,255,0.04));
+      border: 2px solid rgba(255,255,255,0.28);
+      border-radius: 20px; padding: 14px 20px; text-align: center;
+      backdrop-filter: blur(4px);
+      box-shadow: 0 0 24px rgba(255,230,0,0.18), inset 0 1px 0 rgba(255,255,255,0.18);
     }
-    .progress-fill {
-      height: 100%;
-      background: var(--green);
-      border-radius: 4px;
-      transition: width 0.4s ease;
+    .kanji-char {
+      font-family: 'Kaisei Decol', serif; font-size: 56px; font-weight: 700;
+      line-height: 1; color: white;
+      text-shadow: 0 0 24px rgba(255,230,0,0.8), 0 0 48px rgba(255,230,0,0.3);
     }
-    .game-meta {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 16px;
-      font-size: 14px;
-      color: var(--text-muted);
+    .kanji-deco { width: 44px; height: 2px; margin: 6px auto 0;
+      background: linear-gradient(90deg, transparent, var(--neon-yellow), transparent); border-radius: 2px; }
+    .kanji-hint { font-size: 11px; color: rgba(255,255,255,0.45); margin-top: 6px;
+      max-width: 110px; text-align: center; line-height: 1.5; }
+
+    .kanji-drop.shake { animation: fall linear forwards, shakeX 0.1s ease-in-out infinite; }
+    @keyframes shakeX { 0%,100%{margin-left:0} 33%{margin-left:-5px} 66%{margin-left:5px} }
+
+    @keyframes fall {
+      from { transform: translateY(-160px); }
+      to   { transform: translateY(var(--fall-to)); }
     }
-    .score-badge {
-      background: var(--green-light);
-      color: var(--green-dark);
-      padding: 4px 12px;
-      border-radius: 50px;
-      font-size: 13px;
-      font-weight: 500;
+
+    /* EXPLOSION */
+    .explosion { position: absolute; pointer-events: none; z-index: 20; }
+    .exp-ring {
+      width: 110px; height: 110px; border-radius: 50%;
+      border: 4px solid var(--neon-orange);
+      box-shadow: 0 0 30px var(--neon-orange), 0 0 60px rgba(255,140,0,0.4);
+      animation: ringOut 0.6s ease-out forwards;
     }
-    .flashcard {
-      background: var(--card-bg);
-      border-radius: var(--radius);
-      padding: 28px 20px 24px;
-      text-align: center;
-      margin-bottom: 18px;
-      border: 0.5px solid var(--border);
-      box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+    @keyframes ringOut { 0%{transform:scale(0.4);opacity:1} 100%{transform:scale(2);opacity:0} }
+    .exp-text {
+      position: absolute; top: 25px; left: 0; right: 0; text-align: center;
+      font-family: 'DotGothic16', monospace; font-size: 22px; color: var(--neon-orange);
+      text-shadow: 0 0 10px var(--neon-orange);
+      animation: textPop 0.7s ease-out forwards;
     }
-    .card-cat {
-      display: inline-block;
-      font-size: 11px;
-      font-weight: 500;
-      padding: 3px 10px;
-      border-radius: 50px;
-      background: #E6F1FB;
-      color: #185FA5;
-      margin-bottom: 14px;
-      letter-spacing: 0.04em;
+    @keyframes textPop { 0%{opacity:1;transform:scale(0.5)} 50%{opacity:1;transform:scale(1.3)} 100%{opacity:0;transform:scale(1) translateY(-30px)} }
+    .exp-spark {
+      position: absolute; width: 8px; height: 8px; border-radius: 50%;
+      animation: spark var(--sd) ease-out forwards;
     }
-    .card-prompt {
-      font-size: 12px;
-      color: var(--text-hint);
-      margin-bottom: 12px;
-      letter-spacing: 0.04em;
+    @keyframes spark { from{transform:translate(51px,51px);opacity:1} to{transform:translate(var(--sx),var(--sy));opacity:0} }
+
+    /* SCORE BURST */
+    .score-burst {
+      position: absolute; pointer-events: none; z-index: 25;
+      font-family: 'DotGothic16', monospace; font-size: 24px; font-weight: 700;
+      color: var(--neon-green); text-shadow: 0 0 10px var(--neon-green);
+      animation: burstFly 0.8s ease-out forwards;
     }
-    .kanji-display {
-      font-family: 'Kosugi Maru', sans-serif;
-      font-size: 64px;
-      line-height: 1.15;
-      color: var(--text);
-      margin-bottom: 6px;
+    @keyframes burstFly { from{opacity:1;transform:translateY(0) scale(0.8)} to{opacity:0;transform:translateY(-70px) scale(1.1)} }
+
+    /* CHOICES */
+    #choices-bar {
+      flex-shrink: 0; padding: 10px 14px 18px;
+      background: rgba(0,0,0,0.55); backdrop-filter: blur(14px);
+      border-top: 1px solid rgba(255,255,255,0.1);
     }
-    .underline-hint {
-      width: 60px;
-      height: 2px;
-      background: var(--text);
-      margin: 0 auto 14px;
-      border-radius: 2px;
-    }
-    .sentence-ctx {
-      font-size: 14px;
-      color: var(--text-muted);
-      line-height: 1.9;
-    }
-    .choices-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      margin-bottom: 14px;
-    }
+    #choices-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
     .choice-btn {
-      background: var(--card-bg);
-      border: 1.5px solid var(--border);
-      border-radius: var(--radius-sm);
-      padding: 18px 10px;
-      font-size: 20px;
-      font-family: 'Kosugi Maru', sans-serif;
-      cursor: pointer;
-      color: var(--text);
-      transition: all 0.15s;
-      text-align: center;
-      line-height: 1.3;
-      -webkit-tap-highlight-color: transparent;
+      padding: 15px 8px;
+      background: rgba(255,255,255,0.07);
+      border: 1.5px solid rgba(255,255,255,0.18);
+      border-radius: 14px;
+      font-family: 'DotGothic16', monospace; font-size: 19px; color: white;
+      cursor: pointer; text-align: center; transition: all 0.12s; line-height: 1.3;
     }
-    .choice-btn:active:not(:disabled) { transform: scale(0.96); }
-    .choice-btn:hover:not(:disabled) { border-color: var(--green); background: #F5FBF8; }
-    .choice-btn.correct {
-      background: var(--green-light);
-      border-color: var(--green);
-      color: var(--green-dark);
-    }
-    .choice-btn.wrong {
-      background: var(--red-light);
-      border-color: var(--red);
-      color: var(--red-dark);
-    }
-    .choice-btn:disabled { cursor: default; }
-    .feedback-row {
-      min-height: 28px;
-      text-align: center;
-      font-size: 15px;
-      margin-bottom: 12px;
-      font-weight: 500;
-    }
-    .feedback-row.correct-msg { color: var(--green-dark); }
-    .feedback-row.wrong-msg { color: var(--red-dark); }
-    .next-btn {
-      display: none;
-      width: 100%;
-      padding: 16px;
-      background: var(--green);
-      color: white;
-      border: none;
-      border-radius: var(--radius);
-      font-size: 17px;
-      font-family: 'Noto Sans JP', sans-serif;
-      font-weight: 700;
-      cursor: pointer;
-      transition: transform 0.15s;
-    }
-    .next-btn:active { transform: scale(0.97); }
+    .choice-btn:active:not(:disabled) { transform: scale(0.93); background: rgba(255,255,255,0.14); }
+    .choice-btn.ok  { background: rgba(0,255,156,0.2); border-color: var(--neon-green); color: var(--neon-green); box-shadow: 0 0 16px rgba(0,255,156,0.35); }
+    .choice-btn.ng  { background: rgba(255,45,120,0.2); border-color: var(--neon-pink); color: var(--neon-pink); }
+    .choice-btn:disabled { opacity: 0.35; }
 
-    /* ── RESULT SCREEN ── */
-    .result-wrap { text-align: center; padding-top: 10px; }
-    .result-emoji { font-size: 64px; margin-bottom: 12px; }
-    .result-fraction { font-size: 56px; font-weight: 700; color: var(--green); line-height: 1; }
-    .result-total { font-size: 16px; color: var(--text-muted); margin-top: 4px; margin-bottom: 6px; }
-    .result-msg { font-size: 20px; font-weight: 500; color: var(--text); margin-bottom: 6px; }
-    .result-pct { font-size: 14px; color: var(--text-muted); margin-bottom: 28px; }
-    .result-actions { display: flex; flex-direction: column; gap: 10px; }
-    .btn-primary {
-      width: 100%;
-      padding: 16px;
-      background: var(--green);
-      color: white;
-      border: none;
-      border-radius: var(--radius);
-      font-size: 17px;
-      font-family: 'Noto Sans JP', sans-serif;
-      font-weight: 700;
-      cursor: pointer;
-      box-shadow: 0 4px 16px rgba(29,158,117,0.3);
-      transition: transform 0.15s;
+    /* OVERLAY SCREENS */
+    .screen {
+      position: fixed; inset: 0; z-index: 100;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      background: rgba(5,5,22,0.96); backdrop-filter: blur(18px);
+      padding: 28px 22px; text-align: center;
     }
-    .btn-primary:active { transform: scale(0.97); }
-    .btn-secondary {
-      width: 100%;
-      padding: 15px;
-      background: var(--card-bg);
-      color: var(--text);
-      border: 1.5px solid var(--border);
-      border-radius: var(--radius);
-      font-size: 16px;
-      font-family: 'Noto Sans JP', sans-serif;
-      font-weight: 500;
-      cursor: pointer;
-      transition: transform 0.15s;
-    }
-    .btn-secondary:active { transform: scale(0.97); }
+    .screen.hidden { display: none; }
 
-    /* ── REVIEW SCREEN ── */
-    .review-list { display: flex; flex-direction: column; gap: 10px; padding-bottom: 20px; }
-    .review-item {
-      background: var(--card-bg);
-      border: 0.5px solid var(--border);
-      border-radius: var(--radius-sm);
-      padding: 14px 16px;
-      display: flex;
-      align-items: center;
-      gap: 14px;
+    .logo-text {
+      font-family: 'DotGothic16', monospace; font-size: 58px; line-height: 1.1; margin-bottom: 6px;
+      color: var(--neon-yellow);
+      text-shadow: 0 0 20px rgba(255,230,0,0.6), 0 0 60px rgba(255,230,0,0.2);
+      animation: logoPulse 2s ease-in-out infinite;
     }
-    .review-kanji { font-family: 'Kosugi Maru', sans-serif; font-size: 28px; min-width: 56px; text-align: center; }
-    .review-info { flex: 1; }
-    .review-hira { font-family: 'Kosugi Maru', sans-serif; font-size: 18px; color: var(--text); }
-    .review-sent { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
-    .review-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-    .dot-correct { background: var(--green); }
-    .dot-wrong { background: var(--red); }
-    .back-btn {
-      width: 100%;
-      margin-bottom: 16px;
-      padding: 14px;
-      background: var(--card-bg);
-      color: var(--text);
-      border: 1.5px solid var(--border);
-      border-radius: var(--radius);
-      font-size: 16px;
-      font-family: 'Noto Sans JP', sans-serif;
-      font-weight: 500;
-      cursor: pointer;
-    }
+    @keyframes logoPulse { 0%,100%{text-shadow:0 0 20px rgba(255,230,0,0.6)} 50%{text-shadow:0 0 40px rgba(255,230,0,1),0 0 80px rgba(255,230,0,0.4)} }
+    .logo-sub { font-size: 13px; color: rgba(255,255,255,0.4); margin-bottom: 36px; letter-spacing: 0.1em; }
 
-    /* iPad & larger */
+    .q-label { font-size: 12px; color: rgba(255,255,255,0.45); margin-bottom: 10px; letter-spacing: 0.07em; }
+    .pill-row { display: flex; justify-content: center; gap: 8px; margin-bottom: 32px; flex-wrap: wrap; }
+    .pill {
+      padding: 9px 22px; background: rgba(255,255,255,0.07);
+      border: 1.5px solid rgba(255,255,255,0.18); border-radius: 50px;
+      font-family: 'Noto Sans JP', sans-serif; font-size: 15px; color: rgba(255,255,255,0.65); cursor: pointer;
+    }
+    .pill.active { background: var(--neon-yellow); border-color: var(--neon-yellow); color: #0a0a1a; font-weight: 700; box-shadow: 0 0 18px rgba(255,230,0,0.45); }
+
+    .big-btn {
+      width: 100%; max-width: 320px; padding: 18px; border: none; border-radius: 18px;
+      font-family: 'DotGothic16', monospace; font-size: 22px; cursor: pointer; letter-spacing: 0.06em;
+      transition: transform 0.12s;
+    }
+    .big-btn:active { transform: scale(0.95); }
+    .btn-yellow { background: var(--neon-yellow); color: #0a0a1a; box-shadow: 0 0 28px rgba(255,230,0,0.35), 0 6px 20px rgba(0,0,0,0.4); }
+    .btn-pink { background: var(--neon-pink); color: white; box-shadow: 0 0 28px rgba(255,45,120,0.35), 0 6px 20px rgba(0,0,0,0.4); margin-top: 10px; }
+    .btn-ghost { background: transparent; color: rgba(255,255,255,0.6); border: 1.5px solid rgba(255,255,255,0.2); margin-top: 10px; }
+
+    .result-num { font-family: 'DotGothic16', monospace; font-size: 72px; color: var(--neon-yellow); line-height: 1; text-shadow: 0 0 30px rgba(255,230,0,0.7); }
+    .result-unit { font-size: 13px; color: rgba(255,255,255,0.4); margin: 4px 0 16px; }
+    .result-msg { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+    .result-sub { font-size: 13px; color: rgba(255,255,255,0.45); margin-bottom: 28px; }
+    .stats-row { display: flex; gap: 12px; margin-bottom: 28px; width: 100%; max-width: 320px; }
+    .sbox { flex: 1; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 14px; padding: 12px 6px; }
+    .sbox-val { font-family: 'DotGothic16', monospace; font-size: 26px; color: var(--neon-blue); }
+    .sbox-lbl { font-size: 10px; color: rgba(255,255,255,0.38); margin-top: 2px; }
+
+    .go-title { font-family: 'DotGothic16', monospace; font-size: 52px; color: var(--neon-pink);
+      text-shadow: 0 0 30px rgba(255,45,120,0.8); animation: goFlash 0.4s ease-in-out infinite alternate; margin-bottom: 10px; }
+    @keyframes goFlash { from{opacity:1} to{opacity:0.35} }
+
+    /* FLASH OVERLAY */
+    #dmg-flash { position: fixed; inset: 0; z-index: 90; pointer-events: none; opacity: 0; background: rgba(255,45,120,0.3); transition: opacity 0.1s; }
+
     @media (min-width: 600px) {
-      .main { padding: 28px 24px 48px; }
-      .kanji-display { font-size: 80px; }
-      .choice-btn { font-size: 22px; padding: 22px 12px; }
-      .choices-grid { gap: 14px; }
-      .flashcard { padding: 36px 28px 30px; }
+      .kanji-char { font-size: 68px; }
+      .choice-btn { font-size: 22px; padding: 18px 10px; }
+      #choices-grid { gap: 12px; }
+      .logo-text { font-size: 70px; }
     }
   </style>
 </head>
 <body>
 
-<header class="app-header">
-  <div class="app-icon">📖</div>
-  <div>
-    <div class="app-title">漢字よみかたれんしゅう</div>
-    <div class="app-subtitle">Kanji Reading Practice</div>
-  </div>
-</header>
+<div id="stars"></div>
+<div id="dmg-flash"></div>
 
-<main class="main">
-
-  <!-- ══ SETUP SCREEN ══ -->
-  <div id="screen-setup" class="screen active">
-    <div class="section-label">カテゴリー（Category）</div>
-    <div class="pill-row" id="cat-row">
-      <button class="pill active" onclick="setCat('prefecture', this)">都道府県 Prefectures</button>
-      <button class="pill" onclick="setCat('all', this)">ぜんぶ All Words</button>
-    </div>
-
-    <div class="section-label">もんだいのかず（Number of Questions）</div>
-    <div class="pill-row" id="q-row">
-      <button class="pill active" onclick="setQ(5, this)">5</button>
-      <button class="pill" onclick="setQ(10, this)">10</button>
-      <button class="pill" onclick="setQ(15, this)">15</button>
-      <button class="pill" onclick="setQ(999, this)">ぜんぶ All</button>
-    </div>
-
-    <button class="start-btn" onclick="startGame()">▶ スタート！ Start!</button>
-  </div>
-
-  <!-- ══ GAME SCREEN ══ -->
-  <div id="screen-game" class="screen">
-    <div class="progress-wrap">
-      <div class="progress-fill" id="progress-fill" style="width:0%"></div>
-    </div>
-    <div class="game-meta">
-      <span id="q-counter">もんだい 1 / 5</span>
-      <span class="score-badge" id="score-badge">⭕ 0</span>
-    </div>
-    <div class="flashcard">
-      <div class="card-cat" id="card-cat">都道府県</div>
-      <div class="card-prompt">どうよむ？ How do you read this?</div>
-      <div class="kanji-display" id="kanji-disp"></div>
-      <div class="underline-hint"></div>
-      <div class="sentence-ctx" id="sentence-ctx"></div>
-    </div>
-    <div class="choices-grid" id="choices-grid"></div>
-    <div class="feedback-row" id="feedback"></div>
-    <button class="next-btn" id="next-btn" onclick="nextQuestion()">つぎへ →</button>
-  </div>
-
-  <!-- ══ RESULT SCREEN ══ -->
-  <div id="screen-result" class="screen">
-    <div class="result-wrap">
-      <div class="result-emoji" id="result-emoji">🎉</div>
-      <div class="result-fraction" id="result-fraction">0</div>
-      <div class="result-total" id="result-total">もんだい</div>
-      <div class="result-msg" id="result-msg"></div>
-      <div class="result-pct" id="result-pct"></div>
-      <div class="result-actions">
-        <button class="btn-primary" onclick="startGame()">もういちど！ Play Again</button>
-        <button class="btn-secondary" onclick="showReview()">まちがいをみる Review</button>
-        <button class="btn-secondary" onclick="showScreen('setup')">もんだいをえらぶ Change Settings</button>
-      </div>
+<div id="app">
+  <div id="header">
+    <div class="hdr-logo">漢字<span>キャッチ</span>！</div>
+    <div class="hdr-stats">
+      <div class="stat-chip" id="lives-chip">❤️❤️❤️</div>
+      <div class="stat-chip">⭐ <span id="score-disp">0</span></div>
+      <div class="stat-chip">🔥 <span id="streak-disp">0</span></div>
     </div>
   </div>
-
-  <!-- ══ REVIEW SCREEN ══ -->
-  <div id="screen-review" class="screen">
-    <button class="back-btn" onclick="showScreen('result')">← けっかにもどる Back to Results</button>
-    <div class="review-list" id="review-list"></div>
+  <div id="arena">
+    <div id="combo-banner"></div>
   </div>
+  <div id="choices-bar">
+    <div id="choices-grid"></div>
+  </div>
+</div>
 
-</main>
+<!-- TITLE -->
+<div id="scr-title" class="screen">
+  <div class="logo-text">漢字<br>キャッチ！</div>
+  <div class="logo-sub">KANJI READING GAME</div>
+  <div class="q-label">もんだいのかず（Questions）</div>
+  <div class="pill-row" id="q-pills">
+    <button class="pill active" onclick="setQ(10,this)">10</button>
+    <button class="pill" onclick="setQ(15,this)">15</button>
+    <button class="pill" onclick="setQ(20,this)">20</button>
+    <button class="pill" onclick="setQ(999,this)">∞</button>
+  </div>
+  <button class="big-btn btn-yellow" onclick="startGame()">▶ スタート！</button>
+</div>
+
+<!-- RESULT -->
+<div id="scr-result" class="screen hidden">
+  <div class="result-num" id="r-score">0</div>
+  <div class="result-unit">てん（points）</div>
+  <div class="result-msg" id="r-msg"></div>
+  <div class="result-sub" id="r-sub"></div>
+  <div class="stats-row">
+    <div class="sbox"><div class="sbox-val" id="r-correct">0</div><div class="sbox-lbl">⭕ せいかい</div></div>
+    <div class="sbox"><div class="sbox-val" id="r-best">0</div><div class="sbox-lbl">🔥 最高コンボ</div></div>
+    <div class="sbox"><div class="sbox-val" id="r-acc">0%</div><div class="sbox-lbl">📊 正解率</div></div>
+  </div>
+  <button class="big-btn btn-yellow" onclick="startGame()">もういちど！</button>
+  <button class="big-btn btn-ghost" onclick="showScr('scr-title')">タイトルへ</button>
+</div>
+
+<!-- GAME OVER -->
+<div id="scr-gameover" class="screen hidden">
+  <div class="go-title">GAME<br>OVER</div>
+  <div style="font-size:14px;color:rgba(255,255,255,0.45);margin-bottom:16px;">ライフがなくなった！</div>
+  <div class="result-num" id="go-score">0</div>
+  <div class="result-unit">てん</div>
+  <div class="stats-row" style="margin-top:20px;">
+    <div class="sbox"><div class="sbox-val" id="go-correct">0</div><div class="sbox-lbl">⭕ せいかい</div></div>
+    <div class="sbox"><div class="sbox-val" id="go-best">0</div><div class="sbox-lbl">🔥 最高コンボ</div></div>
+    <div class="sbox"><div class="sbox-val" id="go-acc">0%</div><div class="sbox-lbl">📊 正解率</div></div>
+  </div>
+  <button class="big-btn btn-pink" onclick="startGame()" style="margin-top:20px;">もういちど！</button>
+  <button class="big-btn btn-ghost" onclick="showScr('scr-title')">タイトルへ</button>
+</div>
 
 <script>
-  const ALL_PAIRS = [
-    { kanji:"宮城県", hira:"みやぎけん",   sentence:"宮城県のお祭り。",        cat:"prefecture" },
-    { kanji:"山形県", hira:"やまがたけん",  sentence:"山形県のサクランボ。",     cat:"prefecture" },
-    { kanji:"茨城県", hira:"いばらきけん",  sentence:"茨城県のメロン。",        cat:"prefecture" },
-    { kanji:"栃木県", hira:"とちぎけん",    sentence:"栃木県のイチゴ。",        cat:"prefecture" },
-    { kanji:"群馬県", hira:"ぐんまけん",    sentence:"群馬県のこんにゃく。",     cat:"prefecture" },
-    { kanji:"埼玉県", hira:"さいたまけん",  sentence:"埼玉県の人口。",          cat:"prefecture" },
-    { kanji:"神奈川県",hira:"かながわけん", sentence:"神奈川県にある港。",       cat:"prefecture" },
-    { kanji:"新潟県", hira:"にいがたけん",  sentence:"新潟県のお米。",          cat:"prefecture" },
-    { kanji:"富山県", hira:"とやまけん",    sentence:"富山県へ行く。",          cat:"prefecture" },
-    { kanji:"福井県", hira:"ふくいけん",    sentence:"福井県のチューリップ。",   cat:"prefecture" },
-    { kanji:"山梨県", hira:"やまなしけん",  sentence:"山梨県のブドウ。",        cat:"prefecture" },
-    { kanji:"岐阜県", hira:"ぎふけん",      sentence:"岐阜県でくらす。",        cat:"prefecture" },
-    { kanji:"静岡県", hira:"しずおかけん",  sentence:"静岡県のお茶。",          cat:"prefecture" },
-    { kanji:"七夕",   hira:"たなばた",      sentence:"七夕の行事。",            cat:"word" },
-    { kanji:"品物",   hira:"しなもの",      sentence:"品物が豊富だ。",          cat:"word" },
-    { kanji:"重さ",   hira:"おもさ",        sentence:"重さを量る。",            cat:"word" },
-    { kanji:"富士",   hira:"ふじ",          sentence:"富士の山。",              cat:"word" },
-    { kanji:"変化",   hira:"へんか",        sentence:"変化に富む。",            cat:"word" },
-    { kanji:"生産量", hira:"せいさんりょう",sentence:"キノコの生産量。",        cat:"word" },
-    { kanji:"面白さ", hira:"おもしろさ",    sentence:"面白さをはかる。",        cat:"word" },
-  ];
+/* ── STARS ── */
+const starsEl = document.getElementById('stars');
+for(let i=0;i<80;i++){
+  const s=document.createElement('div'); s.className='star';
+  const sz=Math.random()*2.5+0.5;
+  s.style.cssText=`width:${sz}px;height:${sz}px;top:${Math.random()*100}%;left:${Math.random()*100}%;--d:${(Math.random()*3+1).toFixed(1)}s;animation-delay:${(Math.random()*3).toFixed(1)}s`;
+  starsEl.appendChild(s);
+}
 
-  let questionCount = 5;
-  let category = 'prefecture';
-  let questions = [];
-  let current = 0;
-  let score = 0;
-  let answered = false;
-  let results = [];
+/* ── DATA ── */
+const PAIRS = [
+  {kanji:"宮城県",  hira:"みやぎけん",    hint:"宮城県のお祭り。"},
+  {kanji:"山形県",  hira:"やまがたけん",   hint:"山形県のサクランボ。"},
+  {kanji:"茨城県",  hira:"いばらきけん",   hint:"茨城県のメロン。"},
+  {kanji:"栃木県",  hira:"とちぎけん",     hint:"栃木県のイチゴ。"},
+  {kanji:"群馬県",  hira:"ぐんまけん",     hint:"群馬県のこんにゃく。"},
+  {kanji:"埼玉県",  hira:"さいたまけん",   hint:"埼玉県の人口。"},
+  {kanji:"神奈川県",hira:"かながわけん",   hint:"神奈川県にある港。"},
+  {kanji:"新潟県",  hira:"にいがたけん",   hint:"新潟県のお米。"},
+  {kanji:"富山県",  hira:"とやまけん",     hint:"富山県へ行く。"},
+  {kanji:"福井県",  hira:"ふくいけん",     hint:"福井県のチューリップ。"},
+  {kanji:"山梨県",  hira:"やまなしけん",   hint:"山梨県のブドウ。"},
+  {kanji:"岐阜県",  hira:"ぎふけん",       hint:"岐阜県でくらす。"},
+  {kanji:"静岡県",  hira:"しずおかけん",   hint:"静岡県のお茶。"},
+  {kanji:"七夕",    hira:"たなばた",       hint:"七夕の行事。"},
+  {kanji:"品物",    hira:"しなもの",       hint:"品物が豊富だ。"},
+  {kanji:"重さ",    hira:"おもさ",         hint:"重さを量る。"},
+  {kanji:"富士",    hira:"ふじ",           hint:"富士の山。"},
+  {kanji:"変化",    hira:"へんか",         hint:"変化に富む。"},
+  {kanji:"生産量",  hira:"せいさんりょう", hint:"キノコの生産量。"},
+  {kanji:"面白さ",  hira:"おもしろさ",     hint:"面白さをはかる。"},
+];
 
-  function shuffle(arr) {
-    const a = [...arr];
-    for (let i = a.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [a[i], a[j]] = [a[j], a[i]];
+/* ── STATE ── */
+const FALL_SEC = 5;
+let qCount=10, queue=[], qIdx=0, score=0, lives=3, streak=0, bestStreak=0, correct=0, total=0;
+let currentPair=null, gameOn=false, dropEl=null, shakeTimer=null, endTimer=null;
+
+/* ── HELPERS ── */
+function shuffle(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;}
+function showScr(id){document.querySelectorAll('.screen').forEach(s=>s.classList.add('hidden'));const el=document.getElementById(id);if(el)el.classList.remove('hidden');}
+function setQ(n,btn){qCount=n;document.querySelectorAll('#q-pills .pill').forEach(b=>b.classList.remove('active'));btn.classList.add('active');}
+
+function updateHUD(){
+  const hearts=['❤️','❤️','❤️'];
+  document.getElementById('lives-chip').textContent = lives>0 ? hearts.slice(0,lives).join('')+'💀'.repeat(0) : '💀';
+  document.getElementById('score-disp').textContent=score;
+  document.getElementById('streak-disp').textContent=streak;
+}
+
+/* ── START ── */
+function startGame(){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.add('hidden'));
+  document.getElementById('arena').innerHTML='<div id="combo-banner"></div>';
+  score=0;lives=3;streak=0;bestStreak=0;correct=0;total=0;currentPair=null;dropEl=null;gameOn=true;
+  updateHUD();
+  const cnt=Math.min(qCount===999?PAIRS.length:qCount, PAIRS.length);
+  queue=shuffle(PAIRS).slice(0,cnt); qIdx=0;
+  nextQ();
+}
+
+/* ── NEXT QUESTION ── */
+function nextQ(){
+  if(!gameOn) return;
+  if(qIdx>=queue.length){endGame();return;}
+  currentPair=queue[qIdx++];
+  spawnDrop(currentPair);
+  renderChoices(currentPair);
+}
+
+/* ── SPAWN ── */
+function spawnDrop(pair){
+  clearTimers();
+  const arena=document.getElementById('arena');
+  const aW=arena.clientWidth, aH=arena.clientHeight;
+  const minX=16, maxX=aW-160;
+  const x=Math.floor(Math.random()*(maxX-minX)+minX);
+
+  dropEl=document.createElement('div');
+  dropEl.className='kanji-drop';
+  dropEl.id='drop';
+  dropEl.style.cssText=`left:${x}px;--fall-to:${aH+20}px;animation-duration:${FALL_SEC}s;`;
+  dropEl.innerHTML=`
+    <div class="timer-bar-wrap"><div class="timer-bar-fill"></div></div>
+    <div class="kanji-bubble">
+      <div class="kanji-char">${pair.kanji}</div>
+      <div class="kanji-deco"></div>
+      <div class="kanji-hint">${pair.hint}</div>
+    </div>`;
+  arena.appendChild(dropEl);
+
+  // shake warning at 1.5s before end
+  shakeTimer=setTimeout(()=>{if(dropEl)dropEl.classList.add('shake');},(FALL_SEC-1.5)*1000);
+
+  // auto-explode when animation ends
+  dropEl.addEventListener('animationend',onMiss);
+}
+
+function clearTimers(){
+  clearTimeout(shakeTimer);
+  clearTimeout(endTimer);
+}
+
+/* ── CHOICES ── */
+function renderChoices(pair){
+  const grid=document.getElementById('choices-grid');
+  const wrongs=shuffle(PAIRS.filter(p=>p.hira!==pair.hira)).slice(0,3);
+  const opts=shuffle([pair,...wrongs]);
+  grid.innerHTML='';
+  opts.forEach(o=>{
+    const b=document.createElement('button');
+    b.className='choice-btn'; b.textContent=o.hira;
+    b.onclick=()=>onAnswer(o.hira,pair.hira,b);
+    grid.appendChild(b);
+  });
+}
+
+/* ── ANSWER ── */
+function onAnswer(chosen,correct_ans,btn){
+  if(!gameOn||!currentPair) return;
+  total++;
+  disableChoices(true);
+
+  if(chosen===correct_ans){
+    btn.classList.add('ok');
+    correct++;streak++;if(streak>bestStreak)bestStreak=streak;
+
+    // score: 100 base + time bonus + combo
+    let bonus=0;
+    if(dropEl){
+      const anims=dropEl.getAnimations();
+      if(anims.length){const p=anims[0].currentTime/(FALL_SEC*1000);bonus=Math.floor((1-p)*60);}
     }
-    return a;
+    const combo=streak>=3?streak*10:0;
+    const gained=100+bonus+combo;
+    score+=gained;
+    updateHUD();
+
+    // score burst
+    if(dropEl){const r=dropEl.getBoundingClientRect(),arenaR=document.getElementById('arena').getBoundingClientRect();
+      showBurst(r.left-arenaR.left+60,r.top-arenaR.top+40,`+${gained}`);}
+    if(streak>=3)showCombo(streak);
+
+    // remove drop
+    clearTimers();
+    if(dropEl){dropEl.removeEventListener('animationend',onMiss);dropEl.remove();dropEl=null;}
+
+    endTimer=setTimeout(()=>{
+      disableChoices(false);
+      clearClasses();
+      nextQ();
+    },350);
+
+  } else {
+    btn.classList.add('ng');
+    streak=0; updateHUD();
+    // show correct
+    document.querySelectorAll('.choice-btn').forEach(b=>{if(b.textContent===correct_ans)b.classList.add('ok');});
+    endTimer=setTimeout(()=>{disableChoices(false);clearClasses();},600);
   }
+}
 
-  function setCat(c, btn) {
-    category = c;
-    document.querySelectorAll('#cat-row .pill').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
+/* ── MISS (fell through) ── */
+function onMiss(){
+  if(!gameOn) return;
+  const arena=document.getElementById('arena');
+  const aW=arena.clientWidth;
+  // explode at bottom
+  explode(aW/2, arena.clientHeight-60);
+  if(dropEl){dropEl.remove();dropEl=null;}
+  clearTimers(); streak=0;
+  loseLife();
+}
+
+/* ── LOSE LIFE ── */
+function loseLife(){
+  lives--;updateHUD();
+  const f=document.getElementById('dmg-flash');
+  f.style.opacity='1';setTimeout(()=>f.style.opacity='0',200);
+  if(lives<=0){gameOn=false;setTimeout(showGameOver,400);return;}
+  disableChoices(false);clearClasses();
+  setTimeout(nextQ,600);
+}
+
+/* ── EXPLOSION ── */
+function explode(cx,cy){
+  const arena=document.getElementById('arena');
+  const e=document.createElement('div');
+  e.className='explosion';
+  e.style.cssText=`left:${cx-55}px;top:${cy-55}px;`;
+  e.innerHTML=`<div class="exp-ring"></div><div class="exp-text">💥</div>`;
+  const cols=['#FF8C00','#FFE600','#FF2D78','#FF4500'];
+  for(let i=0;i<14;i++){
+    const ang=(i/14)*Math.PI*2, dist=55+Math.random()*45;
+    const sx=Math.cos(ang)*dist, sy=Math.sin(ang)*dist;
+    const sp=document.createElement('div');sp.className='exp-spark';
+    sp.style.cssText=`--sx:${sx}px;--sy:${sy}px;--sd:${0.3+Math.random()*0.3}s;left:51px;top:51px;background:${cols[i%cols.length]}`;
+    e.appendChild(sp);
   }
+  arena.appendChild(e);
+  setTimeout(()=>e.remove(),800);
+}
 
-  function setQ(n, btn) {
-    questionCount = n;
-    document.querySelectorAll('#q-row .pill').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-  }
+/* ── SCORE BURST ── */
+function showBurst(x,y,txt){
+  const arena=document.getElementById('arena');
+  const b=document.createElement('div');b.className='score-burst';
+  b.style.cssText=`left:${x}px;top:${y}px;`;b.textContent=txt;
+  arena.appendChild(b);setTimeout(()=>b.remove(),900);
+}
 
-  function getPool() {
-    return category === 'prefecture'
-      ? ALL_PAIRS.filter(p => p.cat === 'prefecture')
-      : ALL_PAIRS;
-  }
+/* ── COMBO ── */
+function showCombo(n){
+  const el=document.getElementById('combo-banner');
+  if(!el)return;
+  el.textContent=`🔥 ${n}コンボ！`;
+  el.style.animation='none';void el.offsetWidth;
+  el.style.animation='comboPop 0.9s ease-out forwards';
+}
 
-  function startGame() {
-    const pool = getPool();
-    const count = Math.min(questionCount, pool.length);
-    questions = shuffle(pool).slice(0, count);
-    current = 0; score = 0; results = [];
-    showScreen('game');
-    renderQuestion();
-  }
+/* ── END GAME ── */
+function endGame(){
+  gameOn=false;clearTimers();
+  const pct=total>0?Math.round(correct/total*100):0;
+  let msg='😢 もっとがんばろう！';
+  if(pct>=90)msg='🏆 かんぺきです！すごい！';
+  else if(pct>=70)msg='🎉 よくできました！';
+  else if(pct>=50)msg='😊 いいですよ！';
+  document.getElementById('r-score').textContent=score;
+  document.getElementById('r-msg').textContent=msg;
+  document.getElementById('r-sub').textContent=`${queue.length}もんだい おわり！`;
+  document.getElementById('r-correct').textContent=correct;
+  document.getElementById('r-best').textContent=bestStreak;
+  document.getElementById('r-acc').textContent=pct+'%';
+  showScr('scr-result');
+}
 
-  function renderQuestion() {
-    answered = false;
-    const q = questions[current];
-    const total = questions.length;
+function showGameOver(){
+  const pct=total>0?Math.round(correct/total*100):0;
+  document.getElementById('go-score').textContent=score;
+  document.getElementById('go-correct').textContent=correct;
+  document.getElementById('go-best').textContent=bestStreak;
+  document.getElementById('go-acc').textContent=pct+'%';
+  showScr('scr-gameover');
+}
 
-    document.getElementById('progress-fill').style.width = `${(current / total) * 100}%`;
-    document.getElementById('q-counter').textContent = `もんだい ${current + 1} / ${total}`;
-    document.getElementById('score-badge').textContent = `⭕ ${score}`;
-    document.getElementById('kanji-disp').textContent = q.kanji;
-    document.getElementById('sentence-ctx').textContent = q.sentence;
-    document.getElementById('card-cat').textContent = q.cat === 'prefecture' ? '都道府県' : 'ことば';
-    document.getElementById('feedback').textContent = '';
-    document.getElementById('feedback').className = 'feedback-row';
-    document.getElementById('next-btn').style.display = 'none';
+function disableChoices(d){document.querySelectorAll('.choice-btn').forEach(b=>b.disabled=d);}
+function clearClasses(){document.querySelectorAll('.choice-btn').forEach(b=>{b.classList.remove('ok','ng');});}
 
-    const pool = ALL_PAIRS;
-    const wrongs = shuffle(pool.filter(p => p.hira !== q.hira)).slice(0, 3);
-    const choices = shuffle([q, ...wrongs]);
-
-    const grid = document.getElementById('choices-grid');
-    grid.innerHTML = '';
-    choices.forEach(c => {
-      const btn = document.createElement('button');
-      btn.className = 'choice-btn';
-      btn.textContent = c.hira;
-      btn.setAttribute('aria-label', c.hira);
-      btn.addEventListener('click', () => checkAnswer(btn, c.hira, q.hira));
-      grid.appendChild(btn);
-    });
-  }
-
-  function checkAnswer(btn, chosen, correct) {
-    if (answered) return;
-    answered = true;
-
-    const allBtns = document.querySelectorAll('.choice-btn');
-    allBtns.forEach(b => {
-      b.disabled = true;
-      if (b.textContent === correct) b.classList.add('correct');
-    });
-
-    const isCorrect = chosen === correct;
-    if (isCorrect) {
-      score++;
-      btn.classList.add('correct');
-      document.getElementById('feedback').textContent = '⭕ せいかい！ Correct!';
-      document.getElementById('feedback').className = 'feedback-row correct-msg';
-    } else {
-      btn.classList.add('wrong');
-      document.getElementById('feedback').innerHTML = `✕ こたえは「<span style="font-family:\'Kosugi Maru\',sans-serif">${correct}</span>」です`;
-      document.getElementById('feedback').className = 'feedback-row wrong-msg';
-    }
-    document.getElementById('score-badge').textContent = `⭕ ${score}`;
-    results.push({ q: questions[current], correct: isCorrect });
-    document.getElementById('next-btn').style.display = 'block';
-  }
-
-  function nextQuestion() {
-    current++;
-    if (current >= questions.length) {
-      showResult();
-    } else {
-      renderQuestion();
-    }
-  }
-
-  function showResult() {
-    const total = questions.length;
-    const pct = Math.round((score / total) * 100);
-    document.getElementById('progress-fill').style.width = '100%';
-
-    let emoji = '😢', msg = 'もっとれんしゅうしよう！';
-    if (pct >= 90) { emoji = '🏆'; msg = 'すごい！かんぺきです！'; }
-    else if (pct >= 70) { emoji = '🎉'; msg = 'よくできました！'; }
-    else if (pct >= 50) { emoji = '😊'; msg = 'いいですよ！もっとがんばろう！'; }
-
-    document.getElementById('result-emoji').textContent = emoji;
-    document.getElementById('result-fraction').textContent = `${score} / ${total}`;
-    document.getElementById('result-total').textContent = `もんだい (${pct}%)`;
-    document.getElementById('result-msg').textContent = msg;
-    showScreen('result');
-  }
-
-  function showReview() {
-    const list = document.getElementById('review-list');
-    list.innerHTML = '';
-    results.forEach(r => {
-      const div = document.createElement('div');
-      div.className = 'review-item';
-      div.innerHTML = `
-        <div class="review-kanji">${r.q.kanji}</div>
-        <div class="review-info">
-          <div class="review-hira">${r.q.hira}</div>
-          <div class="review-sent">${r.q.sentence}</div>
-        </div>
-        <div class="review-dot ${r.correct ? 'dot-correct' : 'dot-wrong'}"></div>
-      `;
-      list.appendChild(div);
-    });
-    showScreen('review');
-  }
-
-  function showScreen(name) {
-    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-    document.getElementById(`screen-${name}`).classList.add('active');
-    window.scrollTo(0, 0);
-  }
+/* INIT */
+showScr('scr-title');
 </script>
-
 </body>
 </html>
