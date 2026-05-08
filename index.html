@@ -215,6 +215,43 @@
     /* FLASH OVERLAY */
     #dmg-flash { position: fixed; inset: 0; z-index: 90; pointer-events: none; opacity: 0; background: rgba(255,45,120,0.3); transition: opacity 0.1s; }
 
+    /* UPLOAD SCREEN */
+    #scr-upload { overflow-y: auto; justify-content: flex-start; padding-top: 24px; }
+    .upload-title { font-family: 'DotGothic16', monospace; font-size: 26px; color: var(--neon-blue);
+      text-shadow: 0 0 16px rgba(0,200,255,0.6); margin-bottom: 6px; }
+    .upload-sub { font-size: 13px; color: rgba(255,255,255,0.4); margin-bottom: 24px; max-width: 320px; line-height: 1.7; }
+    .upload-zone {
+      width: 100%; max-width: 320px;
+      border: 2px dashed rgba(0,200,255,0.4); border-radius: 18px;
+      padding: 28px 20px; cursor: pointer; transition: all 0.2s; margin-bottom: 16px;
+      background: rgba(0,200,255,0.04);
+    }
+    .upload-zone:hover, .upload-zone.drag-over { border-color: var(--neon-blue); background: rgba(0,200,255,0.1); }
+    .upload-zone-icon { font-size: 40px; margin-bottom: 10px; }
+    .upload-zone-txt { font-size: 14px; color: rgba(255,255,255,0.55); line-height: 1.6; }
+    .upload-zone-txt strong { color: var(--neon-blue); }
+    #upload-preview-wrap { width: 100%; max-width: 320px; margin-bottom: 14px; display: none; }
+    #upload-preview { width: 100%; border-radius: 12px; border: 1px solid rgba(255,255,255,0.15); }
+    #upload-status { min-height: 22px; font-size: 13px; color: rgba(255,255,255,0.5); margin-bottom: 10px; }
+    #upload-status.err { color: var(--neon-pink); }
+    #upload-status.ok  { color: var(--neon-green); }
+    .parsed-list { width: 100%; max-width: 320px; margin-bottom: 16px; text-align: left; }
+    .parsed-list-title { font-size: 12px; color: rgba(255,255,255,0.4); margin-bottom: 8px; letter-spacing: 0.06em; }
+    .parsed-item {
+      display: flex; align-items: center; gap: 10px;
+      background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px; padding: 8px 12px; margin-bottom: 6px;
+    }
+    .parsed-kanji { font-family: 'Kaisei Decol', serif; font-size: 22px; color: white; min-width: 52px; }
+    .parsed-hira  { font-size: 15px; color: var(--neon-blue); flex: 1; }
+    .parsed-del   { background: none; border: none; color: rgba(255,255,255,0.25); font-size: 18px; cursor: pointer; padding: 0 4px; }
+    .parsed-del:hover { color: var(--neon-pink); }
+    .spinner { display: inline-block; width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.2);
+      border-top-color: var(--neon-blue); border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 6px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .btn-blue { background: var(--neon-blue); color: #0a0a1a; box-shadow: 0 0 28px rgba(0,200,255,0.35); }
+    #upload-file-input { display: none; }
+
     @media (min-width: 600px) {
       .kanji-char { font-size: 68px; }
       .choice-btn { font-size: 22px; padding: 18px 10px; }
@@ -257,6 +294,35 @@
     <button class="pill" onclick="setQ(999,this)">∞</button>
   </div>
   <button class="big-btn btn-yellow" onclick="startGame()">▶ スタート！</button>
+  <button class="big-btn btn-ghost" onclick="showScr('scr-upload')" style="margin-top:10px;">📷 問題をついか</button>
+  <div id="weak-badge" style="margin-top:16px;font-size:12px;color:rgba(255,255,255,0.35);min-height:18px;"></div>
+  <button onclick="resetStats()" style="margin-top:8px;background:none;border:none;color:rgba(255,255,255,0.22);font-size:11px;cursor:pointer;font-family:inherit;">成績リセット</button>
+</div>
+
+<!-- UPLOAD SCREEN -->
+<div id="scr-upload" class="screen hidden">
+  <div class="upload-title">📷 問題をついか</div>
+  <div class="upload-sub">漢字プリントの写真をアップロードすると、AIが自動で問題を作ります。</div>
+
+  <input type="file" id="upload-file-input" accept="image/*" onchange="onFileSelect(event)" />
+  <div class="upload-zone" id="upload-zone"
+    onclick="document.getElementById('upload-file-input').click()"
+    ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)">
+    <div class="upload-zone-icon">🖼️</div>
+    <div class="upload-zone-txt">タップして写真をえらぶ<br><strong>または ここにドロップ</strong><br><span style="font-size:11px;opacity:0.6">JPG / PNG 対応</span></div>
+  </div>
+
+  <div id="upload-preview-wrap"><img id="upload-preview" /></div>
+  <div id="upload-status"></div>
+
+  <div class="parsed-list hidden" id="parsed-list">
+    <div class="parsed-list-title">FOUND PAIRS — タップで削除</div>
+    <div id="parsed-items"></div>
+  </div>
+
+  <button class="big-btn btn-blue" id="analyze-btn" onclick="analyzeImage()" style="display:none;margin-bottom:10px;">🔍 AIで解析する</button>
+  <button class="big-btn btn-yellow" id="add-btn" onclick="addParsedPairs()" style="display:none;margin-bottom:10px;">✅ ゲームにくわえる</button>
+  <button class="big-btn btn-ghost" onclick="showScr('scr-title')">← もどる</button>
 </div>
 
 <!-- RESULT -->
@@ -300,7 +366,7 @@ for(let i=0;i<80;i++){
 }
 
 /* ── DATA ── */
-const PAIRS = [
+let PAIRS = [
   {kanji:"宮城県",  hira:"みやぎけん",    hint:"宮城県のお祭り。"},
   {kanji:"山形県",  hira:"やまがたけん",   hint:"山形県のサクランボ。"},
   {kanji:"茨城県",  hira:"いばらきけん",   hint:"茨城県のメロン。"},
@@ -323,14 +389,125 @@ const PAIRS = [
   {kanji:"面白さ",  hira:"おもしろさ",     hint:"面白さをはかる。"},
 ];
 
+/* ── SOUND ENGINE (Web Audio API — no files needed) ── */
+let _ctx = null;
+function getCtx(){
+  if(!_ctx) _ctx = new (window.AudioContext || window.webkitAudioContext)();
+  if(_ctx.state === 'suspended') _ctx.resume();
+  return _ctx;
+}
+function playTone(freq, type, startVol, endVol, startT, dur){
+  const ctx = getCtx();
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.connect(gain); gain.connect(ctx.destination);
+  osc.type = type;
+  osc.frequency.setValueAtTime(freq, ctx.currentTime + startT);
+  gain.gain.setValueAtTime(startVol, ctx.currentTime + startT);
+  gain.gain.exponentialRampToValueAtTime(endVol, ctx.currentTime + startT + dur);
+  osc.start(ctx.currentTime + startT);
+  osc.stop(ctx.currentTime + startT + dur);
+}
+function playNoise(vol, dur, startT){
+  const ctx = getCtx();
+  const buf = ctx.createBuffer(1, ctx.sampleRate * dur, ctx.sampleRate);
+  const d = buf.getChannelData(0);
+  for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1);
+  const src = ctx.createBufferSource(); src.buffer = buf;
+  const gain = ctx.createGain();
+  const filt = ctx.createBiquadFilter(); filt.type='bandpass'; filt.frequency.value=350; filt.Q.value=0.6;
+  src.connect(filt); filt.connect(gain); gain.connect(ctx.destination);
+  gain.gain.setValueAtTime(vol, ctx.currentTime + startT);
+  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + startT + dur);
+  src.start(ctx.currentTime + startT);
+  src.stop(ctx.currentTime + startT + dur);
+}
+// ✅ 正解 — 明るい上昇アルペジオ
+function soundCorrect(){
+  [[523,0],[659,0.07],[784,0.14],[1047,0.21]].forEach(([f,t])=>playTone(f,'sine',0.22,0.001,t,0.18));
+}
+// 🔥 コンボ — さらに高く輝く
+function soundCombo(){
+  [[784,0],[988,0.06],[1175,0.12],[1568,0.18],[2093,0.26]].forEach(([f,t])=>playTone(f,'triangle',0.15,0.001,t,0.18));
+}
+// ❌ 不正解 — 低い二音下降
+function soundWrong(){
+  playTone(280,'sawtooth',0.18,0.001,0,0.12);
+  playTone(200,'sawtooth',0.18,0.001,0.11,0.2);
+}
+// 💥 爆発 — ノイズ＋重低音
+function soundExplode(){
+  playNoise(0.38, 0.45, 0);
+  playTone(80,'sine',0.4,0.001,0,0.4);
+  playTone(55,'sine',0.22,0.001,0.06,0.35);
+}
+// ⚠️ 警告（シェイク時） — ビープ×3
+function soundWarning(){
+  [0, 0.12, 0.24].forEach(t=>playTone(480,'square',0.07,0.001,t,0.07));
+}
+// 💀 ゲームオーバー — 悲しい下降
+function soundGameOver(){
+  [[392,0],[349,0.18],[311,0.36],[261,0.58]].forEach(([f,t])=>playTone(f,'sawtooth',0.2,0.001,t,0.28));
+}
+// 🏆 クリア — ファンファーレ
+function soundClear(){
+  [[523,0],[523,0.1],[523,0.2],[415,0.12],[523,0.38],[659,0.54],[784,0.72]].forEach(([f,t])=>playTone(f,'sine',0.22,0.001,t,0.26));
+}
+
 /* ── STATE ── */
 const FALL_SEC = 5;
 let qCount=10, queue=[], qIdx=0, score=0, lives=3, streak=0, bestStreak=0, correct=0, total=0;
 let currentPair=null, gameOn=false, dropEl=null, shakeTimer=null, endTimer=null;
 
+/* ── MISTAKE MEMORY (persists across games, saved to localStorage) ── */
+// stats[kanji] = { wrong: N, miss: N, right: N }
+let stats = {};
+function loadStats(){ try{ const s=localStorage.getItem('kanji_stats'); if(s) stats=JSON.parse(s); }catch(e){} }
+function saveStats(){ try{ localStorage.setItem('kanji_stats', JSON.stringify(stats)); }catch(e){} }
+function recordResult(kanji, outcome){ // outcome: 'right' | 'wrong' | 'miss'
+  if(!stats[kanji]) stats[kanji]={wrong:0,miss:0,right:0};
+  stats[kanji][outcome]++;
+  saveStats();
+}
+function getWeight(pair){
+  const s = stats[pair.kanji];
+  if(!s) return 1; // 未出題は基本重み
+  const errors = s.wrong + s.miss * 2; // 落下ミスは2倍ペナルティ
+  const rights  = s.right;
+  // 間違いが多いほど重みが大きい。正解を重ねると減っていく
+  return Math.max(1, 1 + errors * 2 - rights);
+}
+
+/* 重み付きランダム選択 */
+function weightedSample(pool, count){
+  const weights = pool.map(p => getWeight(p));
+  const result = [];
+  const used = new Set();
+  const total = weights.reduce((a,b)=>a+b, 0);
+  const n = Math.min(count, pool.length);
+  for(let i=0; i<n; i++){
+    let rand = Math.random() * weights.filter((_,j)=>!used.has(j)).reduce((a,b)=>a+b,0);
+    for(let j=0; j<pool.length; j++){
+      if(used.has(j)) continue;
+      rand -= weights[j];
+      if(rand <= 0){ result.push(pool[j]); used.add(j); break; }
+    }
+    // fallback
+    if(result.length < i+1){
+      const rem = pool.findIndex((_,j)=>!used.has(j));
+      if(rem>=0){ result.push(pool[rem]); used.add(rem); }
+    }
+  }
+  return result;
+}
+
 /* ── HELPERS ── */
 function shuffle(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;}
-function showScr(id){document.querySelectorAll('.screen').forEach(s=>s.classList.add('hidden'));const el=document.getElementById(id);if(el)el.classList.remove('hidden');}
+function showScr(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.add('hidden'));
+  const el=document.getElementById(id);if(el)el.classList.remove('hidden');
+  if(id==='scr-title') updateWeakBadge();
+}
 function setQ(n,btn){qCount=n;document.querySelectorAll('#q-pills .pill').forEach(b=>b.classList.remove('active'));btn.classList.add('active');}
 
 function updateHUD(){
@@ -342,12 +519,15 @@ function updateHUD(){
 
 /* ── START ── */
 function startGame(){
+  loadStats();
   document.querySelectorAll('.screen').forEach(s=>s.classList.add('hidden'));
   document.getElementById('arena').innerHTML='<div id="combo-banner"></div>';
   score=0;lives=3;streak=0;bestStreak=0;correct=0;total=0;currentPair=null;dropEl=null;gameOn=true;
   updateHUD();
-  const cnt=Math.min(qCount===999?PAIRS.length:qCount, PAIRS.length);
-  queue=shuffle(PAIRS).slice(0,cnt); qIdx=0;
+  const cnt = qCount===999 ? PAIRS.length : Math.min(qCount, PAIRS.length);
+  // 重み付きサンプリングで出題順を決定
+  queue = weightedSample(PAIRS, cnt);
+  qIdx=0;
   nextQ();
 }
 
@@ -382,10 +562,14 @@ function spawnDrop(pair){
   arena.appendChild(dropEl);
 
   // shake warning at 1.5s before end
-  shakeTimer=setTimeout(()=>{if(dropEl)dropEl.classList.add('shake');},(FALL_SEC-1.5)*1000);
+  shakeTimer=setTimeout(()=>{if(dropEl){dropEl.classList.add('shake');soundWarning();}},(FALL_SEC-1.5)*1000);
 
-  // auto-explode when animation ends
-  dropEl.addEventListener('animationend',onMiss);
+  // auto-explode when animation ends — only react to the drop itself, not child elements
+  dropEl.addEventListener('animationend', function handler(e){
+    if(e.target !== dropEl) return;
+    dropEl.removeEventListener('animationend', handler);
+    onMiss();
+  });
 }
 
 function clearTimers(){
@@ -416,6 +600,8 @@ function onAnswer(chosen,correct_ans,btn){
   if(chosen===correct_ans){
     btn.classList.add('ok');
     correct++;streak++;if(streak>bestStreak)bestStreak=streak;
+    if(streak>=3) soundCombo(); else soundCorrect();
+    recordResult(currentPair.kanji, 'right');
 
     // score: 100 base + time bonus + combo
     let bonus=0;
@@ -435,7 +621,7 @@ function onAnswer(chosen,correct_ans,btn){
 
     // remove drop
     clearTimers();
-    if(dropEl){dropEl.removeEventListener('animationend',onMiss);dropEl.remove();dropEl=null;}
+    if(dropEl){dropEl.remove();dropEl=null;}
 
     endTimer=setTimeout(()=>{
       disableChoices(false);
@@ -445,7 +631,8 @@ function onAnswer(chosen,correct_ans,btn){
 
   } else {
     btn.classList.add('ng');
-    streak=0; updateHUD();
+    streak=0; updateHUD(); soundWrong();
+    recordResult(currentPair.kanji, 'wrong');
     // show correct
     document.querySelectorAll('.choice-btn').forEach(b=>{if(b.textContent===correct_ans)b.classList.add('ok');});
     endTimer=setTimeout(()=>{disableChoices(false);clearClasses();},600);
@@ -458,9 +645,10 @@ function onMiss(){
   const arena=document.getElementById('arena');
   const aW=arena.clientWidth;
   // explode at bottom
-  explode(aW/2, arena.clientHeight-60);
+  explode(aW/2, arena.clientHeight-60); soundExplode();
   if(dropEl){dropEl.remove();dropEl=null;}
   clearTimers(); streak=0;
+  if(currentPair) recordResult(currentPair.kanji, 'miss');
   loseLife();
 }
 
@@ -469,7 +657,7 @@ function loseLife(){
   lives--;updateHUD();
   const f=document.getElementById('dmg-flash');
   f.style.opacity='1';setTimeout(()=>f.style.opacity='0',200);
-  if(lives<=0){gameOn=false;setTimeout(showGameOver,400);return;}
+  if(lives<=0){gameOn=false;soundGameOver();setTimeout(showGameOver,400);return;}
   disableChoices(false);clearClasses();
   setTimeout(nextQ,600);
 }
@@ -512,7 +700,7 @@ function showCombo(n){
 
 /* ── END GAME ── */
 function endGame(){
-  gameOn=false;clearTimers();
+  gameOn=false;clearTimers(); soundClear();
   const pct=total>0?Math.round(correct/total*100):0;
   let msg='😢 もっとがんばろう！';
   if(pct>=90)msg='🏆 かんぺきです！すごい！';
@@ -539,7 +727,161 @@ function showGameOver(){
 function disableChoices(d){document.querySelectorAll('.choice-btn').forEach(b=>b.disabled=d);}
 function clearClasses(){document.querySelectorAll('.choice-btn').forEach(b=>{b.classList.remove('ok','ng');});}
 
+function resetStats(){
+  if(!confirm('成績をリセットしますか？')) return;
+  stats={};
+  try{ localStorage.removeItem('kanji_stats'); }catch(e){}
+  updateWeakBadge();
+}
+
+function updateWeakBadge(){
+  const badge = document.getElementById('weak-badge');
+  if(!badge) return;
+  const weak = PAIRS
+    .map(p=>({ p, w: getWeight(p) }))
+    .filter(x=>x.w > 2)
+    .sort((a,b)=>b.w-a.w)
+    .slice(0,4)
+    .map(x=>x.p.kanji);
+  badge.textContent = weak.length ? '🎯 苦手: ' + weak.join('・') : '';
+}
+
+/* ── UPLOAD & AI ANALYZE ── */
+let uploadedImageB64 = null;
+let uploadedMime = 'image/jpeg';
+let parsedPairs = [];
+
+// ▼▼▼ RenderにデプロイしたURLをここに入れてください ▼▼▼
+const BACKEND_URL = 'https://YOUR-APP.onrender.com';
+// ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
+
+function onDragOver(e){ e.preventDefault(); document.getElementById('upload-zone').classList.add('drag-over'); }
+function onDragLeave(){ document.getElementById('upload-zone').classList.remove('drag-over'); }
+function onDrop(e){ e.preventDefault(); onDragLeave(); if(e.dataTransfer.files[0]) loadImageFile(e.dataTransfer.files[0]); }
+function onFileSelect(e){ if(e.target.files[0]) loadImageFile(e.target.files[0]); }
+
+function loadImageFile(file){
+  uploadedMime = file.type || 'image/jpeg';
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    const dataUrl = ev.target.result;
+    uploadedImageB64 = dataUrl.split(',')[1];
+    const preview = document.getElementById('upload-preview');
+    preview.src = dataUrl;
+    document.getElementById('upload-preview-wrap').style.display = 'block';
+    document.getElementById('analyze-btn').style.display = 'block';
+    document.getElementById('add-btn').style.display = 'none';
+    document.getElementById('parsed-list').classList.add('hidden');
+    setUploadStatus('', '');
+  };
+  reader.readAsDataURL(file);
+}
+
+function setUploadStatus(msg, type){
+  const el = document.getElementById('upload-status');
+  el.className = type ? `${type}` : '';
+  el.innerHTML = msg;
+}
+
+async function analyzeImage(){
+  if(!uploadedImageB64){ setUploadStatus('⚠️ 画像をえらんでください。', 'err'); return; }
+
+  document.getElementById('analyze-btn').disabled = true;
+  setUploadStatus('<span class="spinner"></span>AIが解析中です…', '');
+
+  try {
+    const res = await fetch(`${BACKEND_URL}/analyze`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ imageB64: uploadedImageB64, mimeType: uploadedMime })
+    });
+
+    if(!res.ok){
+      const err = await res.json().catch(()=>({}));
+      throw new Error(err?.error || `HTTP ${res.status}`);
+    }
+
+    const data = await res.json();
+    const pairs = data.pairs;
+
+    if(!Array.isArray(pairs) || pairs.length === 0) throw new Error('ペアが見つかりませんでした。');
+
+    parsedPairs = pairs;
+    renderParsedList();
+    setUploadStatus(`✅ ${parsedPairs.length}件のペアが見つかりました！`, 'ok');
+    document.getElementById('add-btn').style.display = 'block';
+
+  } catch(e) {
+    setUploadStatus(`❌ エラー: ${e.message}`, 'err');
+  } finally {
+    document.getElementById('analyze-btn').disabled = false;
+  }
+}
+
+function renderParsedList(){
+  const container = document.getElementById('parsed-items');
+  container.innerHTML = '';
+  parsedPairs.forEach((p, i) => {
+    const div = document.createElement('div');
+    div.className = 'parsed-item';
+    div.innerHTML = `
+      <div class="parsed-kanji">${p.kanji}</div>
+      <div class="parsed-hira">${p.hira}</div>
+      <button class="parsed-del" onclick="removeParsed(${i})" title="削除">✕</button>`;
+    container.appendChild(div);
+  });
+  document.getElementById('parsed-list').classList.remove('hidden');
+}
+
+function removeParsed(i){
+  parsedPairs.splice(i, 1);
+  if(parsedPairs.length === 0){
+    document.getElementById('parsed-list').classList.add('hidden');
+    document.getElementById('add-btn').style.display = 'none';
+    setUploadStatus('', '');
+  } else {
+    renderParsedList();
+    setUploadStatus(`✅ ${parsedPairs.length}件のペアが見つかりました！`, 'ok');
+  }
+}
+
+function addParsedPairs(){
+  if(parsedPairs.length === 0) return;
+  // avoid duplicates by kanji key
+  const existing = new Set(PAIRS.map(p=>p.kanji));
+  let added = 0;
+  parsedPairs.forEach(p => {
+    if(!existing.has(p.kanji)){
+      PAIRS.push({ kanji: p.kanji, hira: p.hira, hint: p.hint || `${p.kanji}の読み方。` });
+      existing.add(p.kanji);
+      added++;
+    }
+  });
+  // save to localStorage
+  try{ localStorage.setItem('kanji_custom', JSON.stringify(PAIRS)); }catch(e){}
+  showScr('scr-title');
+  setUploadStatus('', '');
+  // brief green flash on title
+  const badge = document.getElementById('weak-badge');
+  if(badge){ badge.style.color='var(--neon-green)'; badge.textContent=`＋${added}件の問題をついか！`; setTimeout(updateWeakBadge, 2500); }
+}
+
+function loadCustomPairs(){
+  try{
+    const saved = localStorage.getItem('kanji_custom');
+    if(saved){
+      const arr = JSON.parse(saved);
+      if(Array.isArray(arr) && arr.length > 0) PAIRS = arr;
+    }
+  }catch(e){}
+}
+
 /* INIT */
+document.addEventListener('touchstart', ()=>getCtx(), {once:true});
+document.addEventListener('mousedown',  ()=>getCtx(), {once:true});
+loadCustomPairs();
+loadStats();
+updateWeakBadge();
 showScr('scr-title');
 </script>
 </body>
